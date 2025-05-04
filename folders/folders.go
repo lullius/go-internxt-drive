@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/StarHack/go-internxt-drive/config"
@@ -57,6 +58,46 @@ type Folder struct {
 	CreationTime     time.Time   `json:"creationTime"`
 	ModificationTime time.Time   `json:"modificationTime"`
 	Status           string      `json:"status"`
+}
+
+// File represents the response object for files in a folder
+// under GET /drive/folders/content/{uuid}/files
+type File struct {
+	ID               int64         `json:"id"`
+	FileID           string        `json:"fileId"`
+	UUID             string        `json:"uuid"`
+	Name             string        `json:"name"`
+	PlainName        string        `json:"plainName"`
+	Type             string        `json:"type"`
+	FolderID         json.Number   `json:"folderId"`
+	FolderUUID       string        `json:"folderUuid"`
+	Folder           interface{}   `json:"folder"`
+	Bucket           string        `json:"bucket"`
+	UserID           json.Number   `json:"userId"`
+	User             interface{}   `json:"user"`
+	EncryptVersion   string        `json:"encryptVersion"`
+	Size             json.Number   `json:"size"`
+	Deleted          bool          `json:"deleted"`
+	DeletedAt        *time.Time    `json:"deletedAt"`
+	Removed          bool          `json:"removed"`
+	RemovedAt        *time.Time    `json:"removedAt"`
+	Shares           []interface{} `json:"shares"`
+	Sharings         []interface{} `json:"sharings"`
+	Thumbnails       []interface{} `json:"thumbnails"`
+	CreatedAt        time.Time     `json:"createdAt"`
+	UpdatedAt        time.Time     `json:"updatedAt"`
+	CreationTime     time.Time     `json:"creationTime"`
+	ModificationTime time.Time     `json:"modificationTime"`
+	Status           string        `json:"status"`
+}
+
+// ListOptions defines common pagination and sorting parameters
+// for list endpoints.
+type ListOptions struct {
+	Limit  int
+	Offset int
+	Sort   string
+	Order  string
 }
 
 // CreateFolder calls POST {DriveAPIURL}/folders with authorization.
@@ -129,4 +170,124 @@ func DeleteFolder(cfg *config.Config, uuid string) error {
 
 	fmt.Println("Status:", resp.Status)
 	return nil
+}
+
+// ListFolders lists child folders under the given parent UUID.
+// GET {DriveAPIURL}/folders/content/{uuid}/folders?limit={}&offset={}&sort={}&order={}
+func ListFolders(cfg *config.Config, parentUUID string, opts ListOptions) ([]Folder, error) {
+	base := fmt.Sprintf("%s%s/content/%s/folders", cfg.DriveAPIURL, foldersPath, parentUUID)
+	u, err := url.Parse(base)
+	if err != nil {
+		return nil, err
+	}
+	q := u.Query()
+
+	// Always include query params (use defaults if zero/empty)
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+	offset := opts.Offset
+	if offset < 0 {
+		offset = 0
+	}
+	sortField := opts.Sort
+	if sortField == "" {
+		sortField = "plainName"
+	}
+	order := opts.Order
+	if order == "" {
+		order = "ASC"
+	}
+	q.Set("offset", strconv.Itoa(offset))
+	q.Set("limit", strconv.Itoa(limit))
+	q.Set("sort", sortField)
+	q.Set("order", order)
+
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("ListFolders failed: %d %s", resp.StatusCode, string(body))
+	}
+
+	// API returns { "folders": [ ... ] }
+	var wrapper struct {
+		Folders []Folder `json:"folders"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&wrapper); err != nil {
+		return nil, err
+	}
+	return wrapper.Folders, nil
+}
+
+// ListFiles lists files under the given parent folder UUID.
+// GET {DriveAPIURL}/folders/content/{uuid}/files?offset={}&limit={}&sort={}&order={}
+func ListFiles(cfg *config.Config, parentUUID string, opts ListOptions) ([]File, error) {
+	base := fmt.Sprintf("%s%s/content/%s/files", cfg.DriveAPIURL, foldersPath, parentUUID)
+	u, err := url.Parse(base)
+	if err != nil {
+		return nil, err
+	}
+	q := u.Query()
+
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+	offset := opts.Offset
+	if offset < 0 {
+		offset = 0
+	}
+	sortField := opts.Sort
+	if sortField == "" {
+		sortField = "plainName"
+	}
+	order := opts.Order
+	if order == "" {
+		order = "ASC"
+	}
+	q.Set("offset", strconv.Itoa(offset))
+	q.Set("limit", strconv.Itoa(limit))
+	q.Set("sort", sortField)
+	q.Set("order", order)
+
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("ListFiles failed: %d %s", resp.StatusCode, string(body))
+	}
+
+	var wrapper struct {
+		Files []File `json:"files"`
+	}
+	dec := json.NewDecoder(resp.Body)
+	dec.UseNumber()
+	if err := dec.Decode(&wrapper); err != nil {
+		return nil, err
+	}
+	return wrapper.Files, nil
 }

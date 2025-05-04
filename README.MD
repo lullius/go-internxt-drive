@@ -7,6 +7,7 @@ Please refer to `docs/login.md` for an example on how to get started.
 Currently supports:
 
 - Login
+- Folder create, delete, list files, list directories
 
 ## Status
 
@@ -60,14 +61,14 @@ Implementation is **WIP** and here's the current status.
 
 | Method | Endpoint                                          | Description                     | Implemented |
 | ------ | ------------------------------------------------- | ------------------------------- | ----------- |
-| POST   | `/drive/folders`                                  | Create Folder                   | No          |
-| DELETE | `/drive/folders`                                  | —                               | No          |
+| POST   | `/drive/folders`                                  | Create Folder                   | Yes         |
+| DELETE | `/drive/folders`                                  | —                               | Yes         |
 | GET    | `/drive/folders`                                  | —                               | No          |
 | GET    | `/drive/folders/count`                            | —                               | No          |
-| GET    | `/drive/folders/content/{uuid}/files`             | —                               | No          |
+| GET    | `/drive/folders/content/{uuid}/files`             | —                               | Yes         |
 | GET    | `/drive/folders/{id}/files`                       | —                               | No          |
 | GET    | `/drive/folders/{id}/file`                        | —                               | No          |
-| GET    | `/drive/folders/content/{uuid}/folders`           | —                               | No          |
+| GET    | `/drive/folders/content/{uuid}/folders`           | —                               | Yes         |
 | POST   | `/drive/folders/content/{uuid}/folders/existence` | Checks folders existence (POST) | No          |
 | POST   | `/drive/folders/content/{uuid}/files/existence`   | Checks files existence          | No          |
 | GET    | `/drive/folders/content/{uuid}`                   | Gets folder content             | No          |
