@@ -199,8 +199,8 @@ Implementation is **WIP** and here's the current status.
 | DELETE | `/api/users/avatar`                                      | Delete user avatar                  | No          |
 | POST   | `/api/users/deactivation/send`                           | Send deactivation email             | No          |
 | POST   | `/api/users/deactivation/confirm`                        | Confirm user deactivation           | No          |
-| GET    | `/api/users/usage`                                       | Get used storage space              | No          |
-| GET    | `/api/users/limit`                                       | Get maximum allowed storage         | No          |
+| GET    | `/api/users/usage`                                       | Get used storage space              | Yes         |
+| GET    | `/api/users/limit`                                       | Get maximum allowed storage         | Yes         |
 
 ### Fuzzy
 

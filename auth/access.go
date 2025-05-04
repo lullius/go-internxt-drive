@@ -1,0 +1,162 @@
+package auth
+
+import (
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/md5"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"net/http"
+
+	"crypto/sha1"
+
+	"github.com/StarHack/go-internxt-drive/config"
+
+	"golang.org/x/crypto/pbkdf2"
+)
+
+type AccessResponse struct {
+	User struct {
+		Email               string `json:"email"`
+		UserID              string `json:"userId"`
+		Mnemonic            string `json:"mnemonic"`
+		PrivateKey          string `json:"privateKey"`
+		PublicKey           string `json:"publicKey"`
+		RevocateKey         string `json:"revocateKey"`
+		RootFolderID        string `json:"rootFolderId"`
+		Name                string `json:"name"`
+		Lastname            string `json:"lastname"`
+		UUID                string `json:"uuid"`
+		Credit              int    `json:"credit"`
+		CreatedAt           string `json:"createdAt"`
+		Bucket              string `json:"bucket"`
+		RegisterCompleted   bool   `json:"registerCompleted"`
+		Teams               bool   `json:"teams"`
+		Username            string `json:"username"`
+		BridgeUser          string `json:"bridgeUser"`
+		SharedWorkspace     bool   `json:"sharedWorkspace"`
+		HasReferralsProgram bool   `json:"hasReferralsProgram"`
+		BackupsBucket       string `json:"backupsBucket"`
+		Avatar              string `json:"avatar"`
+		EmailVerified       bool   `json:"emailVerified"`
+		LastPasswordChanged string `json:"lastPasswordChangedAt"`
+	} `json:"user"`
+	Token    string          `json:"token"`
+	UserTeam json.RawMessage `json:"userTeam"`
+	NewToken string          `json:"newToken"`
+}
+
+// AccessLogin calls {DRIVE_API_URL}/auth/login/access based on our previous LoginResponse
+func AccessLogin(cfg *config.Config, lr *LoginResponse) (*AccessResponse, error) {
+	encPwd, err := deriveEncryptedPassword(cfg.Password, lr.SKey, cfg.AppCryptoSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	req := map[string]interface{}{
+		"email":    cfg.Email,
+		"password": encPwd,
+	}
+	if lr.TFA && cfg.TFA != "" {
+		req["tfa"] = cfg.TFA
+	}
+
+	b, _ := json.Marshal(req)
+	resp, err := http.Post(cfg.DriveAPIURL+"/auth/login/access", "application/json", bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var ar AccessResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ar); err != nil {
+		return nil, err
+	}
+
+	cfg.Token = ar.NewToken
+
+	return &ar, nil
+}
+
+func deriveEncryptedPassword(password, hexSalt, secret string) (string, error) {
+	// decrypt the OpenSSL‐style salt blob to hex salt string
+	saltHex, err := decryptTextWithKey(hexSalt, secret)
+	if err != nil {
+		return "", err
+	}
+	salt, err := hex.DecodeString(saltHex)
+	if err != nil {
+		return "", err
+	}
+	// PBKDF2‐SHA1
+	key := pbkdf2.Key([]byte(password), salt, 10000, 32, sha1.New)
+	hashHex := hex.EncodeToString(key)
+	// re‐encrypt with OpenSSL style AES‑CBC
+	return encryptTextWithKey(hashHex, secret)
+}
+
+func decryptTextWithKey(hexCipher, secret string) (string, error) {
+	data, err := hex.DecodeString(hexCipher)
+	if err != nil {
+		return "", err
+	}
+	salt := data[8:16]
+	// EVP_BytesToKey with MD5 ×3
+	d := append([]byte(secret), salt...)
+	var prev = d
+	hashes := make([][]byte, 3)
+	for i := 0; i < 3; i++ {
+		h := md5.Sum(prev)
+		hashes[i] = h[:]
+		prev = append(hashes[i], d...)
+	}
+	key := append(hashes[0], hashes[1]...)
+	iv := hashes[2]
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+	mode := cipher.NewCBCDecrypter(block, iv)
+	ct := data[16:]
+	pt := make([]byte, len(ct))
+	mode.CryptBlocks(pt, ct)
+	// strip PKCS#7
+	pad := int(pt[len(pt)-1])
+	pt = pt[:len(pt)-pad]
+	return string(pt), nil
+}
+
+func encryptTextWithKey(plaintext, secret string) (string, error) {
+	salt := make([]byte, 8)
+	_, _ = rand.Read(salt)
+	d := append([]byte(secret), salt...)
+	var prev = d
+	hashes := make([][]byte, 3)
+	for i := 0; i < 3; i++ {
+		h := md5.Sum(prev)
+		hashes[i] = h[:]
+		prev = append(hashes[i], d...)
+	}
+	key := append(hashes[0], hashes[1]...)
+	iv := hashes[2]
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+	// PKCS#7 pad
+	padLen := aes.BlockSize - len(plaintext)%aes.BlockSize
+	for i := 0; i < padLen; i++ {
+		plaintext += string(byte(padLen))
+	}
+	ct := make([]byte, len(plaintext))
+	mode := cipher.NewCBCEncrypter(block, iv)
+	mode.CryptBlocks(ct, []byte(plaintext))
+
+	out := append([]byte("Salted__"), salt...)
+	out = append(out, ct...)
+	return hex.EncodeToString(out), nil
+}
