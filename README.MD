@@ -4,6 +4,10 @@ A pure Go library allowing you to access the [internxt drive API](https://api.in
 
 Please refer to `docs/login.md` for an example on how to get started.
 
+Currently supports:
+
+- Login
+
 ## Status
 
 Implementation is **WIP** and here's the current status.
@@ -64,7 +68,6 @@ Implementation is **WIP** and here's the current status.
 | GET    | `/drive/folders/{id}/files`                       | —                               | No          |
 | GET    | `/drive/folders/{id}/file`                        | —                               | No          |
 | GET    | `/drive/folders/content/{uuid}/folders`           | —                               | No          |
-| GET    | `/drive/folders/content/{uuid}/folders/existence` | Checks folders existence (GET)  | No          |
 | POST   | `/drive/folders/content/{uuid}/folders/existence` | Checks folders existence (POST) | No          |
 | POST   | `/drive/folders/content/{uuid}/files/existence`   | Checks files existence          | No          |
 | GET    | `/drive/folders/content/{uuid}`                   | Gets folder content             | No          |

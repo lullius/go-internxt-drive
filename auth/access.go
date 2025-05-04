@@ -76,6 +76,7 @@ func AccessLogin(cfg *config.Config, lr *LoginResponse) (*AccessResponse, error)
 	}
 
 	cfg.Token = ar.NewToken
+	cfg.RootFolderID = ar.User.RootFolderID
 
 	return &ar, nil
 }

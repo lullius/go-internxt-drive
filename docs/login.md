@@ -1,6 +1,30 @@
 # Login
 
-The following demonstrates how to
+The following demonstrates how to login. After a successful login it's important to remember the NewToken (for all other API requests) and the RootFolderID so the `auth.AccessLogin` will persist that in Config after login.
+
+## E-Mail + Password Login (minimal example)
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"github.com/StarHack/go-internxt-drive/auth"
+	"github.com/StarHack/go-internxt-drive/config"
+	"github.com/StarHack/go-internxt-drive/users"
+)
+
+func main() {
+    cfg := config.NewDefault("user@example.com", "super_secret_password_123")
+	loginResp, _ := auth.Login(cfg)
+	accessResp, _ := auth.AccessLogin(cfg, loginResp)
+	fmt.Println(accessResp.NewToken)
+	fmt.Println(accessResp.User.RootFolderID)
+}
+```
 
 ## E-Mail + Password Login
 
@@ -45,6 +69,9 @@ func main() {
 	// Token is required for all other API calls:
 	fmt.Println("Bearer token:")
 	fmt.Println(accessResp.NewToken)
+
+    fmt.Println("RootFolderID:")
+    fmt.Println(accessResp.User.RootFolderID)
 
 	usage, err := users.GetUsage(cfg)
 	if err != nil {

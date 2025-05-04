@@ -20,6 +20,7 @@ type Config struct {
 	Password         string `json:"password,omitempty"`
 	TFA              string `json:"tfa,omitempty"`
 	Token            string `json:"token,omitempty"`
+	RootFolderID     string `json:"root_folder_id,omitempty"`
 	DriveAPIURL      string `json:"drive_api_url,omitempty"`
 	AuthAPIURL       string `json:"auth_api_url,omitempty"`
 	UsersAPIURL      string `json:"users_api_url,omitempty"`
