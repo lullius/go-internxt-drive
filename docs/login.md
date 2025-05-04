@@ -70,8 +70,8 @@ func main() {
 	fmt.Println("Bearer token:")
 	fmt.Println(accessResp.NewToken)
 
-    fmt.Println("RootFolderID:")
-    fmt.Println(accessResp.User.RootFolderID)
+	fmt.Println("RootFolderID:")
+	fmt.Println(accessResp.User.RootFolderID)
 
 	usage, err := users.GetUsage(cfg)
 	if err != nil {
