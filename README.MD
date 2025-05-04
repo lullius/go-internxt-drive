@@ -1,8 +1,24 @@
 # go-internxt-drive
 
-A pure Go library allowing you to access the internxt drive API.
+A pure Go library allowing you to access the [internxt drive API](https://api.internxt.com/drive/).
+
+Please refer to `docs/login.md` for an example on how to get started.
 
 ## Status
+
+Implementation is **WIP** and here's the current status.
+
+### Auth
+
+| Method | Endpoint                            | Description                                   | Implemented |
+| ------ | ----------------------------------- | --------------------------------------------- | ----------- |
+| POST   | `/drive/auth/login`                 | Get security details to log in                | Yes         |
+| POST   | `/drive/auth/login/access`          | Access user account                           | Yes         |
+| GET    | `/api/auth/logout`                  | Log out of the account                        | No          |
+| GET    | `/api/auth/tfa`                     | Get two-factor authentication                 | No          |
+| PUT    | `/api/auth/tfa`                     | Update two-factor authentication              | No          |
+| DELETE | `/api/auth/tfa`                     | Delete two-factor authentication              | No          |
+| GET    | `/api/auth/are-credentials-correct` | Check if current user credentials are correct | No          |
 
 ### File
 
@@ -62,18 +78,6 @@ A pure Go library allowing you to access the internxt drive API.
 | PATCH  | `/api/folders/{uuid}`                           | —                               | No          |
 | DELETE | `/api/folders/{uuid}`                           | Delete Folder                   | No          |
 | GET    | `/api/folders/meta`                             | —                               | No          |
-
-### Auth
-
-| Method | Endpoint                            | Description                                   | Implemented |
-| ------ | ----------------------------------- | --------------------------------------------- | ----------- |
-| POST   | `/drive/auth/login`                 | Get security details to log in                | No          |
-| POST   | `/drive/auth/login/access`          | Access user account                           | No          |
-| GET    | `/api/auth/logout`                  | Log out of the account                        | No          |
-| GET    | `/api/auth/tfa`                     | Get two-factor authentication                 | No          |
-| PUT    | `/api/auth/tfa`                     | Update two-factor authentication              | No          |
-| DELETE | `/api/auth/tfa`                     | Delete two-factor authentication              | No          |
-| GET    | `/api/auth/are-credentials-correct` | Check if current user credentials are correct | No          |
 
 ## Sharing
 
