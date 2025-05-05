@@ -3,7 +3,12 @@ package buckets
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/sha512"
+	"encoding/hex"
+	"fmt"
 	"io"
+
+	"github.com/tyler-smith/go-bip39"
 )
 
 // NewAES256CTRCipher returns a cipher.Stream that performs AES‑256‑CTR encryption
@@ -27,4 +32,46 @@ func EncryptReader(src io.Reader, key, iv []byte) (io.Reader, error) {
 		return nil, err
 	}
 	return cipher.StreamReader{S: stream, R: src}, nil
+}
+
+// GetFileDeterministicKey returns SHA512(key||data)
+func GetFileDeterministicKey(key, data []byte) []byte {
+	h := sha512.New()
+	h.Write(key)
+	h.Write(data)
+	return h.Sum(nil)
+}
+
+// GenerateFileBucketKey derives a bucket-level key from mnemonic and bucketID
+func GenerateFileBucketKey(mnemonic, bucketID string) ([]byte, error) {
+	seed := bip39.NewSeed(mnemonic, "")
+	bucketBytes, err := hex.DecodeString(bucketID)
+	if err != nil {
+		return nil, err
+	}
+	return GetFileDeterministicKey(seed, bucketBytes), nil
+}
+
+// GenerateFileKey derives the per-file key and IV from mnemonic, bucketID, and plaintext index
+func GenerateFileKey(mnemonic, bucketID, indexHex string) (key, iv []byte, err error) {
+	bucketKey, err := GenerateFileBucketKey(mnemonic, bucketID)
+	if err != nil {
+		return nil, nil, err
+	}
+	indexBytes, err := hex.DecodeString(indexHex)
+	if err != nil {
+		return nil, nil, err
+	}
+	detKey := GetFileDeterministicKey(bucketKey[:32], indexBytes)
+	key = detKey[:32]
+
+	iv = indexBytes[0:16]
+
+	// debug log
+	fmt.Printf(
+		"Encrypting file using AES256CTR (key %s, iv %s)...\n",
+		hex.EncodeToString(key),
+		hex.EncodeToString(iv),
+	)
+	return key, iv, nil
 }

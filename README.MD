@@ -1,12 +1,10 @@
 # go-internxt-drive
 
-A pure Go library allowing you to interact with the [internxt Drive API](https://api.internxt.com/drive/).
-
-Please refer to `docs/login.md` for an example on how to get started.
+A pure Go library allowing you to interact with the [internxt Drive API](https://api.internxt.com/drive/). Please refer to `docs/` directory for examples on how to get started.
 
 Currently supports:
 
-- Login
+- Login (`docs/login.md`)
 - Folder
   - Create
   - Delete

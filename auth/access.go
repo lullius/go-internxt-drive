@@ -80,6 +80,7 @@ func AccessLogin(cfg *config.Config, lr *LoginResponse) (*AccessResponse, error)
 
 	cfg.Token = ar.NewToken
 	cfg.RootFolderID = ar.User.RootFolderID
+	cfg.Bucket = ar.User.Bucket
 
 	// 1) SHA256 the raw pass string
 	sum := sha256.Sum256([]byte(ar.User.UserID))
@@ -88,6 +89,11 @@ func AccessLogin(cfg *config.Config, lr *LoginResponse) (*AccessResponse, error)
 	// 2) build "user:hexPass" and Base64
 	creds := fmt.Sprintf("%s:%s", ar.User.BridgeUser, hexPass)
 	cfg.BasicAuthHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(creds))
+
+	cfg.Mnemonic, err = decryptTextWithKey(ar.User.Mnemonic, cfg.Password)
+	if err != nil {
+		return nil, err
+	}
 
 	return &ar, nil
 }
