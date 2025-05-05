@@ -6,8 +6,11 @@ import (
 	"crypto/cipher"
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"crypto/sha1"
@@ -77,6 +80,14 @@ func AccessLogin(cfg *config.Config, lr *LoginResponse) (*AccessResponse, error)
 
 	cfg.Token = ar.NewToken
 	cfg.RootFolderID = ar.User.RootFolderID
+
+	// 1) SHA256 the raw pass string
+	sum := sha256.Sum256([]byte(ar.User.UserID))
+	hexPass := hex.EncodeToString(sum[:])
+
+	// 2) build "user:hexPass" and Base64
+	creds := fmt.Sprintf("%s:%s", ar.User.BridgeUser, hexPass)
+	cfg.BasicAuthHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(creds))
 
 	return &ar, nil
 }
