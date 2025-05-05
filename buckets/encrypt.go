@@ -34,6 +34,19 @@ func EncryptReader(src io.Reader, key, iv []byte) (io.Reader, error) {
 	return cipher.StreamReader{S: stream, R: src}, nil
 }
 
+// DecryptReader wraps the provided src reader in a StreamReader that
+// decrypts data encrypted with AES‑256‑CTR (no padding):
+//
+//	encryptedSrc -> source -> …
+func DecryptReader(src io.Reader, key, iv []byte) (io.Reader, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	stream := cipher.NewCTR(block, iv)
+	return cipher.StreamReader{S: stream, R: src}, nil
+}
+
 // GetFileDeterministicKey returns SHA512(key||data)
 func GetFileDeterministicKey(key, data []byte) []byte {
 	h := sha512.New()
