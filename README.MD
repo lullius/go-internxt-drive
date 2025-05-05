@@ -7,8 +7,13 @@ Please refer to `docs/login.md` for an example on how to get started.
 Currently supports:
 
 - Login
-- Folder create, delete, list files, list directories
-- File upload
+- Folder
+  - Create
+  - Delete
+  - List files
+  - List directories
+- File
+  - Upload
 
 ## Status
 
