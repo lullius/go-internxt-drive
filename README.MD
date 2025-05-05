@@ -9,6 +9,7 @@ Currently supports:
   - Create
   - Delete
   - Rename
+  - Move
   - List files
   - List directories
 - File
@@ -48,21 +49,6 @@ Implementation is **WIP** and here's the current status.
 | POST   | `/drive/files/thumbnail`           | Create Thumbnail                      | No          |
 | DELETE | `/drive/files/{bucketId}/{fileId}` | Delete file from storage by fileId    | No          |
 
-### Share
-
-| Method | Endpoint                                 | Description                        | Implemented |
-| ------ | ---------------------------------------- | ---------------------------------- | ----------- |
-| GET    | `/drive/storage/share/domains`           | —                                  | No          |
-| GET    | `/drive/storage/share/list`              | Get share list                     | No          |
-| GET    | `/drive/storage/share/{token}`           | Get share by token                 | No          |
-| PUT    | `/drive/storage/share/{token}/view`      | Increment share view by token      | No          |
-| PUT    | `/drive/storage/share/{shareId}`         | Update share by id                 | No          |
-| DELETE | `/drive/storage/share/{shareId}`         | Delete share by id                 | No          |
-| POST   | `/drive/storage/share/file/{fileId}`     | Create share for file              | No          |
-| POST   | `/drive/storage/share/folder/{folderId}` | Create share for folder            | No          |
-| GET    | `/drive/storage/share/down/files`        | Get all files by token paginated   | No          |
-| GET    | `/drive/storage/share/down/folders`      | Get all folders by token paginated | No          |
-
 ### Folder
 
 | Method | Endpoint                                          | Description                     | Implemented |
@@ -80,14 +66,29 @@ Implementation is **WIP** and here's the current status.
 | GET    | `/drive/folders/content/{uuid}`                   | Gets folder content             | No          |
 | GET    | `/drive/folders/{id}/folders`                     | —                               | No          |
 | GET    | `/drive/folders/{uuid}/meta`                      | —                               | No          |
-| PUT    | `/drive/folders/{uuid}/meta`                      | —                               | No          |
+| PUT    | `/drive/folders/{uuid}/meta`                      | Renames a folder                | Yes         |
 | GET    | `/drive/folders/{uuid}/ancestors`                 | —                               | No          |
 | GET    | `/drive/folders/{uuid}/tree`                      | —                               | No          |
 | GET    | `/drive/folders/{id}/metadata`                    | —                               | No          |
 | GET    | `/drive/folders/{uuid}/size`                      | —                               | No          |
-| PATCH  | `/drive/folders/{uuid}`                           | —                               | No          |
+| PATCH  | `/drive/folders/{uuid}`                           | Moves folder to a new parent    | Yes         |
 | DELETE | `/drive/folders/{uuid}`                           | Delete Folder                   | No          |
 | GET    | `/drive/folders/meta`                             | —                               | No          |
+
+### Share
+
+| Method | Endpoint                                 | Description                        | Implemented |
+| ------ | ---------------------------------------- | ---------------------------------- | ----------- |
+| GET    | `/drive/storage/share/domains`           | —                                  | No          |
+| GET    | `/drive/storage/share/list`              | Get share list                     | No          |
+| GET    | `/drive/storage/share/{token}`           | Get share by token                 | No          |
+| PUT    | `/drive/storage/share/{token}/view`      | Increment share view by token      | No          |
+| PUT    | `/drive/storage/share/{shareId}`         | Update share by id                 | No          |
+| DELETE | `/drive/storage/share/{shareId}`         | Delete share by id                 | No          |
+| POST   | `/drive/storage/share/file/{fileId}`     | Create share for file              | No          |
+| POST   | `/drive/storage/share/folder/{folderId}` | Create share for folder            | No          |
+| GET    | `/drive/storage/share/down/files`        | Get all files by token paginated   | No          |
+| GET    | `/drive/storage/share/down/folders`      | Get all folders by token paginated | No          |
 
 ## Sharing
 

@@ -320,3 +320,37 @@ func RenameFolder(cfg *config.Config, uuid, newName string) error {
 	}
 	return nil
 }
+
+// MoveFolder moves a folder into a new parent.
+// Returns nil on HTTP 200, or an error otherwise.
+func MoveFolder(cfg *config.Config, uuid, destUUID string) error {
+	endpoint := fmt.Sprintf("%s%s/%s", cfg.DriveAPIURL, foldersPath, uuid)
+
+	payload := struct {
+		DestinationFolder string `json:"destinationFolder"`
+	}{DestinationFolder: destUUID}
+
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("MoveFolder: marshal payload: %w", err)
+	}
+
+	req, err := http.NewRequest("PATCH", endpoint, bytes.NewReader(b))
+	if err != nil {
+		return fmt.Errorf("MoveFolder: create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("MoveFolder: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("MoveFolder failed: %d %s", resp.StatusCode, string(body))
+	}
+	return nil
+}
