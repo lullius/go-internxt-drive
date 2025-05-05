@@ -8,6 +8,7 @@ Currently supports:
 - Folder
   - Create
   - Delete
+  - Rename
   - List files
   - List directories
 - File

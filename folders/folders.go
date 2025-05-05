@@ -100,9 +100,8 @@ type ListOptions struct {
 	Order  string
 }
 
-// CreateFolder calls POST {DriveAPIURL}/folders with authorization.
-// It auto‑fills CreationTime/ModificationTime if empty, checks status,
-// and returns the newly created Folder.
+// CreateFolder calls {DriveAPIURL}/folders with authorization.
+// It auto‑fills CreationTime/ModificationTime if empty, checks status, and returns the newly created Folder.
 func CreateFolder(cfg *config.Config, reqBody CreateFolderRequest) (*Folder, error) {
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	if reqBody.CreationTime == "" {
@@ -131,13 +130,11 @@ func CreateFolder(cfg *config.Config, reqBody CreateFolderRequest) (*Folder, err
 	}
 	defer resp.Body.Close()
 
-	// If not 200 OK, read body and return error
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != 201 {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("CreateFolder failed: %d %s", resp.StatusCode, string(body))
 	}
 
-	// Decode into Folder
 	var folder Folder
 	if err := json.NewDecoder(resp.Body).Decode(&folder); err != nil {
 		return nil, err
@@ -182,7 +179,6 @@ func ListFolders(cfg *config.Config, parentUUID string, opts ListOptions) ([]Fol
 	}
 	q := u.Query()
 
-	// Always include query params (use defaults if zero/empty)
 	limit := opts.Limit
 	if limit <= 0 {
 		limit = 50
@@ -222,7 +218,6 @@ func ListFolders(cfg *config.Config, parentUUID string, opts ListOptions) ([]Fol
 		return nil, fmt.Errorf("ListFolders failed: %d %s", resp.StatusCode, string(body))
 	}
 
-	// API returns { "folders": [ ... ] }
 	var wrapper struct {
 		Folders []Folder `json:"folders"`
 	}
@@ -290,4 +285,38 @@ func ListFiles(cfg *config.Config, parentUUID string, opts ListOptions) ([]File,
 		return nil, err
 	}
 	return wrapper.Files, nil
+}
+
+// RenameFolder updates the plainName of an existing folder.
+// Returns nil on HTTP 200, or an error otherwise.
+func RenameFolder(cfg *config.Config, uuid, newName string) error {
+	endpoint := fmt.Sprintf("%s%s/%s/meta", cfg.DriveAPIURL, foldersPath, uuid)
+
+	payload := struct {
+		PlainName string `json:"plainName"`
+	}{PlainName: newName}
+
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("RenameFolder: marshal payload: %w", err)
+	}
+
+	req, err := http.NewRequest("PUT", endpoint, bytes.NewReader(b))
+	if err != nil {
+		return fmt.Errorf("RenameFolder: create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("RenameFolder: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("RenameFolder failed: %d %s", resp.StatusCode, string(body))
+	}
+	return nil
 }
