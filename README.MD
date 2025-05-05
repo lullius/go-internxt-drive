@@ -8,6 +8,7 @@ Currently supports:
 
 - Login
 - Folder create, delete, list files, list directories
+- File upload
 
 ## Status
 

@@ -1,14 +1,12 @@
 package buckets
 
 import (
-	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -49,85 +47,18 @@ func GenerateFileKey(mnemonic, bucketID, indexHex string) (key, iv []byte, err e
 		return nil, nil, err
 	}
 	detKey := GetFileDeterministicKey(bucketKey[:32], indexBytes)
-	return detKey[:32], detKey[32:48], nil // first 32 bytes == key, next 16 bytes == IV
+	key = detKey[:32]
+
+	iv = indexBytes[0:16]
+
+	// debug log
+	fmt.Printf(
+		"Encrypting file using AES256CTR (key %s, iv %s)...\n",
+		hex.EncodeToString(key),
+		hex.EncodeToString(iv),
+	)
+	return key, iv, nil
 }
-
-// encryptChunkGCM reads at most chunkSize bytes from r, encrypts with AES‑GCM,
-// and returns the serialized segment: nonce || ciphertext || authTag.
-func encryptChunkGCM(r io.Reader, fileKey []byte) (segment []byte, err error) {
-	block, err := aes.NewCipher(fileKey)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-	// read up to chunkSize
-	buf := make([]byte, chunkSize)
-	n, err := io.ReadFull(r, buf)
-	if err == io.ErrUnexpectedEOF || err == io.EOF {
-		if n == 0 {
-			return nil, io.EOF
-		}
-		buf = buf[:n]
-	} else if err != nil {
-		return nil, err
-	}
-	// generate random 12‑byte nonce
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err := rand.Read(nonce); err != nil {
-		return nil, err
-	}
-	// Seal: ciphertext||tag
-	ct := gcm.Seal(nil, nonce, buf, nil)
-	// prepend nonce
-	segment = append(nonce, ct...)
-	return segment, nil
-}
-
-// encryptChunksCTR reads the file in chunkSize blocks, and for each block
-// streams it through AES‑CTR with the given key and iv. It returns
-// slices of ciphertext segments.
-func encryptChunksCTR(f *os.File, fileKey, iv []byte) (segments [][]byte, specs []UploadPartSpec, hashes []Shard, err error) {
-	block, err := aes.NewCipher(fileKey)
-	if err != nil {
-		return
-	}
-	stream := cipher.NewCTR(block, iv)
-
-	idx := 0
-	for {
-		buf := make([]byte, chunkSize)
-		n, readErr := io.ReadFull(f, buf)
-		if readErr == io.ErrUnexpectedEOF || readErr == io.EOF {
-			if n == 0 {
-				break
-			}
-			buf = buf[:n]
-		} else if readErr != nil {
-			err = readErr
-			return
-		}
-
-		// encrypt in‑place
-		ct := make([]byte, len(buf))
-		stream.XORKeyStream(ct, buf)
-
-		// record
-		segments = append(segments, ct)
-		specs = append(specs, UploadPartSpec{Index: idx, Size: int64(len(ct))})
-		h := sha1.Sum(ct)
-		hashes = append(hashes, Shard{Hash: hex.EncodeToString(h[:]), UUID: ""})
-
-		idx++
-	}
-	return
-}
-
-// ----------------------------------------------------------------
-// updated UploadFile
-// ----------------------------------------------------------------
 
 func UploadFile(cfg *config.Config, filePath string) (string, error) {
 	raw, err := os.ReadFile(filePath)
@@ -135,65 +66,51 @@ func UploadFile(cfg *config.Config, filePath string) (string, error) {
 		return "", err
 	}
 	plainSize := int64(len(raw))
-	bucketID := cfg.Bucket
-
-	// 1) plaintext index for key derivation
 	ph := sha256.Sum256(raw)
-	plainIndex := hex.EncodeToString(ph[:])
 
-	// 2) derive fileKey + iv
-	fileKey, iv, err := GenerateFileKey(cfg.Mnemonic, bucketID, plainIndex)
+	ph = [32]byte{}
+	if _, err := rand.Read(ph[:]); err != nil {
+		return "", fmt.Errorf("cannot generate random index: %w", err)
+	}
+
+	plainIndex := hex.EncodeToString(ph[:])
+	fileKey, iv, err := GenerateFileKey(cfg.Mnemonic, cfg.Bucket, plainIndex)
 	if err != nil {
 		return "", err
 	}
-
-	// 3) open file and produce encrypted chunks + metadata
 	f, err := os.Open(filePath)
 	if err != nil {
 		return "", err
 	}
 	defer f.Close()
-
-	segments, specs, shards, err := encryptChunksCTR(f, fileKey, iv)
+	encReader, err := EncryptReader(f, fileKey, iv)
 	if err != nil {
 		return "", err
 	}
-
-	// 4) overall encrypted index = SHA256(concat all ciphertext)
-	h256 := sha256.New()
-	for _, seg := range segments {
-		h256.Write(seg)
-	}
-	encIndex := hex.EncodeToString(h256.Sum(nil))
-
-	// 5) start → transfer → finish
-	startResp, err := StartUpload(cfg, bucketID, specs)
+	sha256Hasher := sha256.New()
+	sha1Hasher := sha1.New()
+	r := io.TeeReader(encReader, sha256Hasher)
+	r = io.TeeReader(r, sha1Hasher)
+	specs := []UploadPartSpec{{Index: 0, Size: plainSize}}
+	startResp, err := StartUpload(cfg, cfg.Bucket, specs)
 	if err != nil {
 		return "", err
 	}
-
-	for i, seg := range segments {
-		shards[i].UUID = startResp.Uploads[i].UUID
-		if err := Transfer(startResp.Uploads[i], bytes.NewReader(seg), specs[i].Size); err != nil {
-			return "", err
-		}
+	part := startResp.Uploads[0]
+	if err := Transfer(part, r, plainSize); err != nil {
+		return "", err
 	}
+	encIndex := hex.EncodeToString(ph[:])
+	partHash := hex.EncodeToString(sha1Hasher.Sum(nil))
 
-	finishResp, err := FinishUpload(cfg, bucketID, encIndex, shards)
+	finishResp, err := FinishUpload(cfg, cfg.Bucket, encIndex, []Shard{{Hash: partHash, UUID: part.UUID}})
 	if err != nil {
 		return "", err
 	}
-
-	// 6) create the meta file with plaintext size
 	base := filepath.Base(filePath)
 	name := strings.TrimSuffix(base, filepath.Ext(base))
 	ext := strings.TrimPrefix(filepath.Ext(base), ".")
-
-	meta, err := CreateMetaFile(
-		cfg, name, bucketID, finishResp.ID,
-		"03-aes", cfg.RootFolderID,
-		name, ext, plainSize,
-	)
+	meta, err := CreateMetaFile(cfg, name, cfg.Bucket, finishResp.ID, "03-aes", cfg.RootFolderID, name, ext, plainSize)
 	if err != nil {
 		return "", err
 	}
