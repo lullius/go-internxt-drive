@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/sha512"
 	"encoding/hex"
-	"fmt"
 	"io"
 
 	"github.com/tyler-smith/go-bip39"
@@ -81,10 +80,13 @@ func GenerateFileKey(mnemonic, bucketID, indexHex string) (key, iv []byte, err e
 	iv = indexBytes[0:16]
 
 	// debug log
-	fmt.Printf(
-		"Encrypting file using AES256CTR (key %s, iv %s)...\n",
-		hex.EncodeToString(key),
-		hex.EncodeToString(iv),
-	)
+	/*
+		fmt.Printf(
+			"Encrypting file using AES256CTR (key %s, iv %s)...\n",
+			hex.EncodeToString(key),
+			hex.EncodeToString(iv),
+		)
+	*/
+
 	return key, iv, nil
 }

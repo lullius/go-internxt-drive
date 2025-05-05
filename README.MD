@@ -11,7 +11,8 @@ Currently supports:
   - List files
   - List directories
 - File
-  - Upload
+  - Upload file
+  - Download file
 
 ## Status
 
