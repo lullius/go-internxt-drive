@@ -108,3 +108,47 @@ func DownloadFile(cfg *config.Config, fileID, destPath string) error {
 	}
 	return nil
 }
+
+// DownloadFileStream returns a ReadCloser that streams the decrypted contents
+// of the file with the given UUID. The caller must close the returned ReadCloser.
+func DownloadFileStream(cfg *config.Config, fileUUID string) (io.ReadCloser, error) {
+	// 1) Fetch file info (including shards and index)
+	info, err := GetBucketFileInfo(cfg, cfg.Bucket, fileUUID)
+	if err != nil {
+		return nil, err
+	}
+	if len(info.Shards) == 0 {
+		return nil, fmt.Errorf("no shards found for file %s", fileUUID)
+	}
+	shard := info.Shards[0]
+
+	// 2) Derive fileKey and IV from the stored index
+	key, iv, err := GenerateFileKey(cfg.Mnemonic, cfg.Bucket, info.Index)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3) Download the encrypted shard
+	resp, err := http.Get(shard.URL)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, fmt.Errorf("shard download failed: %d %s", resp.StatusCode, string(body))
+	}
+
+	// 4) Wrap in AES‑CTR decryptor
+	decReader, err := DecryptReader(resp.Body, key, iv)
+	if err != nil {
+		resp.Body.Close()
+		return nil, err
+	}
+
+	// 5) Return a ReadCloser that closes the HTTP body when closed
+	return struct {
+		io.Reader
+		io.Closer
+	}{Reader: decReader, Closer: resp.Body}, nil
+}
