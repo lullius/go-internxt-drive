@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -119,6 +120,9 @@ func decryptTextWithKey(hexCipher, secret string) (string, error) {
 	data, err := hex.DecodeString(hexCipher)
 	if err != nil {
 		return "", err
+	}
+	if len(data) < 16 {
+		return "", errors.New("failed to login")
 	}
 	salt := data[8:16]
 	// EVP_BytesToKey with MD5 ×3
