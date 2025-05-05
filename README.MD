@@ -1,6 +1,6 @@
 # go-internxt-drive
 
-A pure Go library allowing you to access the [internxt drive API](https://api.internxt.com/drive/).
+A pure Go library allowing you to interact with the [internxt Drive API](https://api.internxt.com/drive/).
 
 Please refer to `docs/login.md` for an example on how to get started.
 
