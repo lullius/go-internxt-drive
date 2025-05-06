@@ -143,7 +143,7 @@ func CreateFolder(cfg *config.Config, reqBody CreateFolderRequest) (*Folder, err
 	return &folder, nil
 }
 
-// DeleteFolders calls DELETE {DriveAPIURL}/folders/{uuid} with authorization and deletes it
+// DeleteFolders deletes a folder by UUID
 func DeleteFolder(cfg *config.Config, uuid string) error {
 	u, err := url.Parse(cfg.DriveAPIURL + foldersPath + "/" + uuid)
 	if err != nil {
@@ -165,12 +165,11 @@ func DeleteFolder(cfg *config.Config, uuid string) error {
 		return fmt.Errorf("DeleteFolder failed: %d %s", resp.StatusCode, string(body))
 	}
 
-	fmt.Println("Status:", resp.Status)
 	return nil
 }
 
 // ListFolders lists child folders under the given parent UUID.
-// GET {DriveAPIURL}/folders/content/{uuid}/folders?limit={}&offset={}&sort={}&order={}
+// Returns a slice of folders or error otherwise
 func ListFolders(cfg *config.Config, parentUUID string, opts ListOptions) ([]Folder, error) {
 	base := fmt.Sprintf("%s%s/content/%s/folders", cfg.DriveAPIURL, foldersPath, parentUUID)
 	u, err := url.Parse(base)
@@ -228,7 +227,7 @@ func ListFolders(cfg *config.Config, parentUUID string, opts ListOptions) ([]Fol
 }
 
 // ListFiles lists files under the given parent folder UUID.
-// GET {DriveAPIURL}/folders/content/{uuid}/files?offset={}&limit={}&sort={}&order={}
+// Returns a slice of files or error otherwise
 func ListFiles(cfg *config.Config, parentUUID string, opts ListOptions) ([]File, error) {
 	base := fmt.Sprintf("%s%s/content/%s/files", cfg.DriveAPIURL, foldersPath, parentUUID)
 	u, err := url.Parse(base)
