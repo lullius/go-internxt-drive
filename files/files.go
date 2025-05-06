@@ -57,7 +57,7 @@ func DeleteFile(cfg *config.Config, uuid string) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNoContent {
+	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("DeleteFile failed: %d %s", resp.StatusCode, string(body))
 	}
