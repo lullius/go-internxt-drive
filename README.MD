@@ -43,7 +43,7 @@ Implementation is **WIP** and here's the current status.
 | PUT    | `/drive/files/{uuid}/meta`         | Update File data                      | No          |
 | PUT    | `/drive/files/{uuid}`              | —                                     | No          |
 | PATCH  | `/drive/files/{uuid}`              | —                                     | No          |
-| DELETE | `/drive/files/{uuid}`              | Delete file from storage and database | No          |
+| DELETE | `/drive/files/{uuid}`              | Delete file from storage and database | Yes         |
 | GET    | `/drive/files/recents`             | —                                     | No          |
 | GET    | `/drive/files/meta`                | —                                     | No          |
 | POST   | `/drive/files/thumbnail`           | Create Thumbnail                      | No          |
