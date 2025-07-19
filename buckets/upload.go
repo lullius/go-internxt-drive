@@ -10,11 +10,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/StarHack/go-internxt-drive/config"
 )
 
-func UploadFile(cfg *config.Config, filePath, targetFolderUUID string) (*CreateMetaResponse, error) {
+func UploadFile(cfg *config.Config, filePath, targetFolderUUID string, modTime time.Time) (*CreateMetaResponse, error) {
 	raw, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
@@ -64,7 +65,7 @@ func UploadFile(cfg *config.Config, filePath, targetFolderUUID string) (*CreateM
 	base := filepath.Base(filePath)
 	name := strings.TrimSuffix(base, filepath.Ext(base))
 	ext := strings.TrimPrefix(filepath.Ext(base), ".")
-	meta, err := CreateMetaFile(cfg, name, cfg.Bucket, finishResp.ID, "03-aes", targetFolderUUID, name, ext, plainSize)
+	meta, err := CreateMetaFile(cfg, name, cfg.Bucket, finishResp.ID, "03-aes", targetFolderUUID, name, ext, plainSize, modTime)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +75,7 @@ func UploadFile(cfg *config.Config, filePath, targetFolderUUID string) (*CreateM
 // UploadFileStream uploads data from the provided io.Reader into Internxt,
 // encrypting it on the fly and creating the metadata file in the target folder.
 // It returns the CreateMetaResponse of the created file entry.
-func UploadFileStream(cfg *config.Config, targetFolderUUID, fileName string, in io.Reader, plainSize int64) (*CreateMetaResponse, error) {
+func UploadFileStream(cfg *config.Config, targetFolderUUID, fileName string, in io.Reader, plainSize int64, modTime time.Time) (*CreateMetaResponse, error) {
 	var ph [32]byte
 	if _, err := rand.Read(ph[:]); err != nil {
 		return nil, fmt.Errorf("cannot generate random index: %w", err)
@@ -117,7 +118,7 @@ func UploadFileStream(cfg *config.Config, targetFolderUUID, fileName string, in 
 	base := filepath.Base(fileName)
 	name := strings.TrimSuffix(base, filepath.Ext(base))
 	ext := strings.TrimPrefix(filepath.Ext(base), ".")
-	meta, err := CreateMetaFile(cfg, name, cfg.Bucket, finishResp.ID, "03-aes", targetFolderUUID, name, ext, plainSize)
+	meta, err := CreateMetaFile(cfg, name, cfg.Bucket, finishResp.ID, "03-aes", targetFolderUUID, name, ext, plainSize, modTime)
 	if err != nil {
 		return nil, err
 	}
