@@ -14,7 +14,7 @@ import (
 	"github.com/StarHack/go-internxt-drive/config"
 )
 
-func UploadFile(cfg *config.Config, filePath, targetFolderUUID string) (*CreateMetaResp, error) {
+func UploadFile(cfg *config.Config, filePath, targetFolderUUID string) (*CreateMetaResponse, error) {
 	raw, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func UploadFile(cfg *config.Config, filePath, targetFolderUUID string) (*CreateM
 // UploadFileStream uploads data from the provided io.Reader into Internxt,
 // encrypting it on the fly and creating the metadata file in the target folder.
 // It returns the CreateMetaResponse of the created file entry.
-func UploadFileStream(cfg *config.Config, targetFolderUUID, fileName string, in io.Reader, plainSize int64) (*CreateMetaResp, error) {
+func UploadFileStream(cfg *config.Config, targetFolderUUID, fileName string, in io.Reader, plainSize int64) (*CreateMetaResponse, error) {
 	var ph [32]byte
 	if _, err := rand.Read(ph[:]); err != nil {
 		return nil, fmt.Errorf("cannot generate random index: %w", err)

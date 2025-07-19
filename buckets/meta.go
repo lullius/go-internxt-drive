@@ -6,22 +6,26 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/StarHack/go-internxt-drive/config"
 )
 
-type createMetaReq struct {
-	Name           string `json:"name"`
-	Bucket         string `json:"bucket"`
-	FileID         string `json:"fileId"`
-	EncryptVersion string `json:"encryptVersion"`
-	FolderUuid     string `json:"folderUuid"`
-	Size           int64  `json:"size"`
-	PlainName      string `json:"plainName"`
-	Type           string `json:"type"`
+type CreateMetaRequest struct {
+	Name             string    `json:"name"`
+	Bucket           string    `json:"bucket"`
+	FileID           string    `json:"fileId"`
+	EncryptVersion   string    `json:"encryptVersion"`
+	FolderUuid       string    `json:"folderUuid"`
+	Size             int64     `json:"size"`
+	PlainName        string    `json:"plainName"`
+	Type             string    `json:"type"`
+	CreationTime     time.Time `json:"creationTime"`
+	Date             time.Time `json:"date"`
+	ModificationTime time.Time `json:"modificationTime"`
 }
 
-type CreateMetaResp struct {
+type CreateMetaResponse struct {
 	UUID           string      `json:"uuid"`
 	Name           string      `json:"name"`
 	Bucket         string      `json:"bucket"`
@@ -34,17 +38,18 @@ type CreateMetaResp struct {
 	Created        string      `json:"created"`
 }
 
-func CreateMetaFile(cfg *config.Config, name, bucketID, fileID, encryptVersion, folderUuid, plainName, fileType string, size int64) (*CreateMetaResp, error) {
+func CreateMetaFile(cfg *config.Config, name, bucketID, fileID, encryptVersion, folderUuid, plainName, fileType string, size int64, modTime time.Time) (*CreateMetaResponse, error) {
 	url := "https://api.internxt.com/drive/files"
-	reqBody := createMetaReq{
-		Name:           name,
-		Bucket:         bucketID,
-		FileID:         fileID,
-		EncryptVersion: encryptVersion,
-		FolderUuid:     folderUuid,
-		Size:           size,
-		PlainName:      plainName,
-		Type:           fileType,
+	reqBody := CreateMetaRequest{
+		Name:             name,
+		Bucket:           bucketID,
+		FileID:           fileID,
+		EncryptVersion:   encryptVersion,
+		FolderUuid:       folderUuid,
+		Size:             size,
+		PlainName:        plainName,
+		Type:             fileType,
+		ModificationTime: modTime,
 	}
 	b, err := json.Marshal(reqBody)
 	if err != nil {
@@ -67,7 +72,7 @@ func CreateMetaFile(cfg *config.Config, name, bucketID, fileID, encryptVersion, 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("create meta failed: status %d, %s", resp.StatusCode, string(body))
 	}
-	var result CreateMetaResp
+	var result CreateMetaResponse
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, err
 	}
