@@ -160,7 +160,8 @@ func DeleteFolder(cfg *config.Config, uuid string) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNoContent {
+	//Server returns 204 on success
+	if resp.StatusCode != 204 {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("DeleteFolder failed: %d %s", resp.StatusCode, string(body))
 	}
