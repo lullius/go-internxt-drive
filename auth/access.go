@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"crypto/sha1"
 
@@ -99,6 +100,25 @@ func AccessLogin(cfg *config.Config, lr *LoginResponse) (*AccessResponse, error)
 	return &ar, nil
 }
 
+func AreCredentialsCorrect(cfg *config.Config, hashedPassword string) (bool, error) {
+	endpoint := fmt.Sprintf("%s/auth/are-credentials-correct?hashedPassword=%s", cfg.DriveAPIURL, url.QueryEscape(hashedPassword))
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 func deriveEncryptedPassword(password, hexSalt, secret string) (string, error) {
 	// decrypt the OpenSSL‐style salt blob to hex salt string
 	saltHex, err := decryptTextWithKey(hexSalt, secret)
@@ -112,6 +132,9 @@ func deriveEncryptedPassword(password, hexSalt, secret string) (string, error) {
 	// PBKDF2‐SHA1
 	key := pbkdf2.Key([]byte(password), salt, 10000, 32, sha1.New)
 	hashHex := hex.EncodeToString(key)
+
+	fmt.Println("Hashed password (hex):", hashHex)
+
 	// re‐encrypt with OpenSSL style AES‑CBC
 	return encryptTextWithKey(hashHex, secret)
 }

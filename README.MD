@@ -30,7 +30,7 @@ Implementation is **WIP** and here's the current status.
 | GET    | `/drive/auth/tfa`                     | Get two-factor authentication                 | No          |
 | PUT    | `/drive/auth/tfa`                     | Update two-factor authentication              | No          |
 | DELETE | `/drive/auth/tfa`                     | Delete two-factor authentication              | No          |
-| GET    | `/drive/auth/are-credentials-correct` | Check if current user credentials are correct | No          |
+| GET    | `/drive/auth/are-credentials-correct` | Check if current user credentials are correct | Yes          |
 
 ### File
 
