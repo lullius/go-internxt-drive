@@ -27,9 +27,9 @@ Implementation is **WIP** and here's the current status.
 | POST   | `/drive/auth/login`                   | Get security details to log in                | Yes         |
 | POST   | `/drive/auth/login/access`            | Access user account                           | Yes         |
 | GET    | `/drive/auth/logout`                  | Log out of the account                        | Yes         |
-| GET    | `/drive/auth/tfa`                     | Get two-factor authentication                 | No          |
-| PUT    | `/drive/auth/tfa`                     | Update two-factor authentication              | No          |
-| DELETE | `/drive/auth/tfa`                     | Delete two-factor authentication              | No          |
+| GET    | `/drive/auth/tfa`                     | Get two-factor authentication                 | Yes          |
+| PUT    | `/drive/auth/tfa`                     | Update two-factor authentication              | Yes          |
+| DELETE | `/drive/auth/tfa`                     | Delete two-factor authentication              | Yes          |
 | GET    | `/drive/auth/are-credentials-correct` | Check if current user credentials are correct | Yes          |
 
 ### File

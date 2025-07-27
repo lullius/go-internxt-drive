@@ -59,6 +59,7 @@ func AccessLogin(cfg *config.Config, lr *LoginResponse) (*AccessResponse, error)
 	if err != nil {
 		return nil, err
 	}
+	cfg.EncryptedPassword = encPwd
 
 	req := map[string]interface{}{
 		"email":    cfg.Email,

@@ -16,21 +16,22 @@ const (
 )
 
 type Config struct {
-	Email            string `json:"email,omitempty"`
-	Password         string `json:"password,omitempty"`
-	TFA              string `json:"tfa,omitempty"`
-	Token            string `json:"token,omitempty"`
-	RootFolderID     string `json:"root_folder_id,omitempty"`
-	Bucket           string `json:"bucket,omitempty"`
-	Mnemonic         string `json:"mnemonic,omitempty"`
-	BasicAuthHeader  string `json:"basic_auth_header,omitempty"`
-	DriveAPIURL      string `json:"drive_api_url,omitempty"`
-	AuthAPIURL       string `json:"auth_api_url,omitempty"`
-	UsersAPIURL      string `json:"users_api_url,omitempty"`
-	AppCryptoSecret  string `json:"app_crypto_secret,omitempty"`
-	AppCryptoSecret2 string `json:"app_crypto_secret2,omitempty"`
-	AppMagicIV       string `json:"app_magic_iv,omitempty"`
-	AppMagicSalt     string `json:"app_magic_salt,omitempty"`
+	Email             string `json:"email,omitempty"`
+	Password          string `json:"password,omitempty"`
+	TFA               string `json:"tfa,omitempty"`
+	Token             string `json:"token,omitempty"`
+	RootFolderID      string `json:"root_folder_id,omitempty"`
+	Bucket            string `json:"bucket,omitempty"`
+	Mnemonic          string `json:"mnemonic,omitempty"`
+	BasicAuthHeader   string `json:"basic_auth_header,omitempty"`
+	DriveAPIURL       string `json:"drive_api_url,omitempty"`
+	AuthAPIURL        string `json:"auth_api_url,omitempty"`
+	UsersAPIURL       string `json:"users_api_url,omitempty"`
+	AppCryptoSecret   string `json:"app_crypto_secret,omitempty"`
+	AppCryptoSecret2  string `json:"app_crypto_secret2,omitempty"`
+	AppMagicIV        string `json:"app_magic_iv,omitempty"`
+	AppMagicSalt      string `json:"app_magic_salt,omitempty"`
+	EncryptedPassword string `json:"encrypted_password,omitempty"`
 }
 
 func NewDefault(email, password string) *Config {
