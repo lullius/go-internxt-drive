@@ -102,6 +102,11 @@ func UploadFileStream(cfg *config.Config, targetFolderUUID, fileName string, in 
 	if err != nil {
 		return nil, err
 	}
+
+	if len(startResp.Uploads) == 0 {
+		return nil, fmt.Errorf("startResp.Uploads is empty")
+	}
+
 	part := startResp.Uploads[0]
 
 	if err := Transfer(part, r, plainSize); err != nil {
