@@ -3,11 +3,14 @@ package buckets
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"fmt"
 	"io"
 
 	"github.com/tyler-smith/go-bip39"
+	"golang.org/x/crypto/ripemd160"
 )
 
 // NewAES256CTRCipher returns a cipher.Stream that performs AES‑256‑CTR encryption
@@ -64,6 +67,26 @@ func GenerateFileBucketKey(mnemonic, bucketID string) ([]byte, error) {
 	return GetFileDeterministicKey(seed, bucketBytes), nil
 }
 
+// GenerateBucketKey generates a 64-character hexadecimal bucket key from a mnemonic and bucket ID.
+func GenerateBucketKey(mnem string, bucketID []byte) (string, error) {
+	seed := bip39.NewSeed(mnem, "")
+	deterministicKey, err := GetDeterministicKey(seed, bucketID)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(deterministicKey)[:64], nil
+}
+
+func GetDeterministicKey(key []byte, data []byte) ([]byte, error) {
+	hasher := sha512.New()
+	data_bytes, err := hex.DecodeString(hex.EncodeToString(key) + hex.EncodeToString(data))
+	if err != nil {
+		return nil, err
+	}
+	hasher.Write(data_bytes)
+	return hasher.Sum(nil), nil
+}
+
 // GenerateFileKey derives the per-file key and IV from mnemonic, bucketID, and plaintext index
 func GenerateFileKey(mnemonic, bucketID, indexHex string) (key, iv []byte, err error) {
 	bucketKey, err := GenerateFileBucketKey(mnemonic, bucketID)
@@ -89,4 +112,23 @@ func GenerateFileKey(mnemonic, bucketID, indexHex string) (key, iv []byte, err e
 	*/
 
 	return key, iv, nil
+}
+
+// Calculates the hash of a file
+func CalculateFileHash(reader io.Reader) (string, error) {
+	sha256Hasher := sha256.New()
+
+	buf := make([]byte, 4096) // 4KB buffer size
+	_, err := io.CopyBuffer(sha256Hasher, reader, buf)
+	if err != nil {
+		return "", fmt.Errorf("error reading data: %v", err)
+	}
+
+	sha256Result := sha256Hasher.Sum(nil)
+
+	ripemd160Hasher := ripemd160.New()
+	ripemd160Hasher.Write(sha256Result)
+	ripemd160Result := ripemd160Hasher.Sum(nil)
+
+	return hex.EncodeToString(ripemd160Result), nil
 }
