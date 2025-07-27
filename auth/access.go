@@ -134,8 +134,6 @@ func deriveEncryptedPassword(password, hexSalt, secret string) (string, error) {
 	key := pbkdf2.Key([]byte(password), salt, 10000, 32, sha1.New)
 	hashHex := hex.EncodeToString(key)
 
-	fmt.Println("Hashed password (hex):", hashHex)
-
 	// re‐encrypt with OpenSSL style AES‑CBC
 	return encryptTextWithKey(hashHex, secret)
 }
