@@ -287,6 +287,48 @@ func ListFiles(cfg *config.Config, parentUUID string, opts ListOptions) ([]File,
 	return wrapper.Files, nil
 }
 
+// This function will get all of the files in a folder, getting 50 at a time until completed
+func ListAllFiles(cfg *config.Config, parentUUID string) ([]File, error) {
+	var outFiles []File
+	offset := 0
+	loops := 0
+	maxLoops := 10000 //Find sane number...
+	for {
+		files, err := ListFiles(cfg, parentUUID, ListOptions{Offset: offset})
+		if err != nil {
+			return nil, err
+		}
+		outFiles = append(outFiles, files...)
+		offset += 50
+		loops += 1
+		if len(files) != 50 || loops >= maxLoops {
+			break
+		}
+	}
+	return outFiles, nil
+}
+
+// This function will get all of the folders in a folder, getting 50 at a time until completed
+func ListAllFolders(cfg *config.Config, parentUUID string) ([]Folder, error) {
+	var outFolders []Folder
+	offset := 0
+	loops := 0
+	maxLoops := 10000 //Find sane number...
+	for {
+		files, err := ListFolders(cfg, parentUUID, ListOptions{Offset: offset})
+		if err != nil {
+			return nil, err
+		}
+		outFolders = append(outFolders, files...)
+		offset += 50
+		loops += 1
+		if len(files) != 50 || loops >= maxLoops {
+			break
+		}
+	}
+	return outFolders, nil
+}
+
 // RenameFolder updates the plainName of an existing folder.
 // Returns nil on HTTP 200, or an error otherwise.
 func RenameFolder(cfg *config.Config, uuid, newName string) error {
