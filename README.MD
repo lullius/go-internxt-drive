@@ -42,7 +42,7 @@ Implementation is **WIP** and here's the current status.
 | GET    | `/drive/files/{uuid}/meta`         | —                                     | Yes          |
 | PUT    | `/drive/files/{uuid}/meta`         | Update File data                      | Yes          |
 | PUT    | `/drive/files/{uuid}`              | —                                     | No          |
-| PATCH  | `/drive/files/{uuid}`              | —                                     | No          |
+| PATCH  | `/drive/files/{uuid}`              | Move a file to a new dir UUID         | Yes          |
 | DELETE | `/drive/files/{uuid}`              | Delete file from storage and database | Yes         |
 | GET    | `/drive/files/recents`             | —                                     | No          |
 | GET    | `/drive/files/meta`                | —                                     | No          |
