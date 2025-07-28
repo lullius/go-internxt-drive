@@ -15,7 +15,7 @@ import (
 
 const foldersPath = "/folders"
 
-// FolderStatus represents the status filter for folder operations
+// FolderStatus represents the status filter for file and folder operations
 // Possible values: EXISTS, TRASHED, DELETED, ALL
 type FolderStatus string
 
@@ -167,6 +167,38 @@ func DeleteFolder(cfg *config.Config, uuid string) error {
 	}
 
 	return nil
+}
+
+// GetFolderSize retrieves the total size (in bytes) of a folder by UUID.
+// Returns the size as int64, or an error.
+func GetFolderSize(cfg *config.Config, uuid string) (int64, error) {
+	endpoint := fmt.Sprintf("%s%s/%s/size", cfg.DriveAPIURL, foldersPath, uuid)
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return 0, fmt.Errorf("GetFolderSize: create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("GetFolderSize: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return 0, fmt.Errorf("GetFolderSize failed: %d %s", resp.StatusCode, string(body))
+	}
+
+	var result struct {
+		Size int64 `json:"size"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return 0, fmt.Errorf("GetFolderSize: decode response: %w", err)
+	}
+
+	return result.Size, nil
 }
 
 // ListFolders lists child folders under the given parent UUID.
