@@ -220,7 +220,7 @@ Implementation is **WIP** and here's the current status.
 
 | Method | Endpoint                | Description                  | Implemented |
 | ------ | ----------------------- | ---------------------------- | ----------- |
-| GET    | `/drive/fuzzy/{search}` | Search items by partial name | No          |
+| GET    | `/drive/fuzzy/{search}` | Search items by partial name | Yes         |
 
 ### Backup
 
