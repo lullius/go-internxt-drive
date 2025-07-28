@@ -15,6 +15,9 @@ Currently supports:
 - File
   - Upload file
   - Download file
+  - Delete
+  - Rename
+  - Move
 
 ## Status
 
