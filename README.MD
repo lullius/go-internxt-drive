@@ -241,13 +241,13 @@ Implementation is **WIP** and here's the current status.
 
 | Method | Endpoint                                 | Description                              | Implemented |
 | ------ | ---------------------------------------- | ---------------------------------------- | ----------- |
-| GET    | `/drive/storage/trash/paginated`         | Get paginated trash content              | No          |
-| POST   | `/drive/storage/trash/add`               | Add files/folders to trash               | No          |
-| DELETE | `/drive/storage/trash/all`               | Delete all items from user’s trash       | No          |
-| DELETE | `/drive/storage/trash/all/request`       | (alternate) Delete all trash via request | No          |
-| DELETE | `/drive/storage/trash`                   | Delete specified trash items             | No          |
-| DELETE | `/drive/storage/trash/file/{fileId}`     | Delete single file from trash            | No          |
-| DELETE | `/drive/storage/trash/folder/{folderId}` | Delete single folder from trash          | No          |
+| GET    | `/drive/storage/trash/paginated`         | Get paginated trash content              | Yes         |
+| POST   | `/drive/storage/trash/add`               | Add files/folders to trash               | Yes         |
+| DELETE | `/drive/storage/trash/all`               | Delete all items from user’s trash       | Yes         |
+| DELETE | `/drive/storage/trash/all/request`       | (alternate) Delete all trash via request | Yes         |
+| DELETE | `/drive/storage/trash`                   | Delete specified trash items             | Yes         |
+| DELETE | `/drive/storage/trash/file/{fileId}`     | Delete single file from trash            | Yes         |
+| DELETE | `/drive/storage/trash/folder/{folderId}` | Delete single folder from trash          | Yes         |
 
 ### Sends
 

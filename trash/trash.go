@@ -3,7 +3,6 @@ package trash
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,30 +11,24 @@ import (
 	"github.com/StarHack/go-internxt-drive/folders"
 )
 
-type TrashItemsRequest struct {
-	Items []TrashItem `json:"items"`
-}
-
-type PaginatedTrashResponse struct {
-	Items []any `json:"items"`
-	Page  int   `json:"page"`
-	Total int   `json:"total"`
-}
-
-type TrashItem struct {
-	File   *folders.File
-	Folder *folders.Folder
-}
-
-type paginatedTrashRaw struct {
-	Result []json.RawMessage `json:"result"`
-}
-
+type TrashType string
 type SortField string
 type Order string
 type ItemType string
 
+type TrashRef struct {
+	UUID string    `json:"uuid"`
+	Type TrashType `json:"type"`
+}
+
+type TrashItemsRequest struct {
+	Items []TrashRef `json:"items"`
+}
+
 const (
+	TrashTypeFile   TrashType = "file"
+	TrashTypeFolder TrashType = "folder"
+
 	OrderAsc  Order = "ASC"
 	OrderDesc Order = "DESC"
 
@@ -47,35 +40,20 @@ const (
 	ItemTypeFolders ItemType = "folders"
 )
 
-func parseTrashItem(data []byte) (*TrashItem, error) {
-	var probe struct {
-		Type string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &probe); err != nil {
-		return nil, err
-	}
-
-	switch probe.Type {
-	case "folder":
-		var f folders.Folder
-		if err := json.Unmarshal(data, &f); err != nil {
-			return nil, err
-		}
-		return &TrashItem{Folder: &f}, nil
-	case "file":
-		var f folders.File
-		if err := json.Unmarshal(data, &f); err != nil {
-			return nil, err
-		}
-		return &TrashItem{File: &f}, nil
-	default:
-		return nil, fmt.Errorf("unknown item type: %s", probe.Type)
-	}
+// NewTrashFile returns a new TrashRef of type file
+func NewTrashFile(uuid string) TrashRef {
+	return TrashRef{UUID: uuid, Type: TrashTypeFile}
 }
 
-func GetPaginatedTrash(cfg *config.Config, limit, offset int, itemType ItemType, sort SortField, order Order, root bool) ([]*TrashItem, error) {
+// NewTrashFile returns a new TrashRef of type folder
+func NewTrashFolder(uuid string) TrashRef {
+	return TrashRef{UUID: uuid, Type: TrashTypeFolder}
+}
+
+// GetPaginatedTrashFolders gets folders in trash
+func GetPaginatedTrashFolders(cfg *config.Config, limit, offset int, sort SortField, order Order, root bool) ([]folders.Folder, error) {
 	url := fmt.Sprintf("%s/storage/trash/paginated?limit=%d&offset=%d&type=%s&root=%t&sort=%s&order=%s",
-		cfg.DriveAPIURL, limit, offset, itemType, root, sort, order)
+		cfg.DriveAPIURL, limit, offset, ItemTypeFolders, root, sort, order)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -90,7 +68,7 @@ func GetPaginatedTrash(cfg *config.Config, limit, offset int, itemType ItemType,
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("failed to fetch paginated trash: " + resp.Status)
+		return nil, fmt.Errorf("failed to fetch folders: %s", resp.Status)
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -98,23 +76,68 @@ func GetPaginatedTrash(cfg *config.Config, limit, offset int, itemType ItemType,
 		return nil, err
 	}
 
-	var raw paginatedTrashRaw
+	var raw struct {
+		Result []json.RawMessage `json:"result"`
+	}
 	if err := json.Unmarshal(body, &raw); err != nil {
 		return nil, err
 	}
 
-	var items []*TrashItem
+	var result []folders.Folder
 	for _, r := range raw.Result {
-		item, err := parseTrashItem(r)
-		if err == nil {
-			items = append(items, item)
+		var f folders.Folder
+		if err := json.Unmarshal(r, &f); err == nil {
+			result = append(result, f)
 		}
 	}
-
-	return items, nil
+	return result, nil
 }
 
-func AddToTrash(cfg *config.Config, items []TrashItem) error {
+// GetPaginatedTrashFiles gets files in trash
+func GetPaginatedTrashFiles(cfg *config.Config, limit, offset int, sort SortField, order Order, root bool) ([]folders.File, error) {
+	url := fmt.Sprintf("%s/storage/trash/paginated?limit=%d&offset=%d&type=%s&root=%t&sort=%s&order=%s",
+		cfg.DriveAPIURL, limit, offset, ItemTypeFiles, root, sort, order)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch files: %s", resp.Status)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var raw struct {
+		Result []json.RawMessage `json:"result"`
+	}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return nil, err
+	}
+
+	var result []folders.File
+	for _, r := range raw.Result {
+		var f folders.File
+		if err := json.Unmarshal(r, &f); err == nil {
+			result = append(result, f)
+		}
+	}
+	return result, nil
+}
+
+// AddToTrash adds an item to trash
+func AddToTrash(cfg *config.Config, items []TrashRef) error {
 	body, _ := json.Marshal(TrashItemsRequest{Items: items})
 
 	req, err := http.NewRequest(http.MethodPost, cfg.DriveAPIURL+"/storage/trash/add", bytes.NewReader(body))
@@ -136,6 +159,7 @@ func AddToTrash(cfg *config.Config, items []TrashItem) error {
 	return nil
 }
 
+// DeleteAllTrash deletes the entire trash
 func DeleteAllTrash(cfg *config.Config) error {
 	req, err := http.NewRequest(http.MethodDelete, cfg.DriveAPIURL+"/storage/trash/all", nil)
 	if err != nil {
@@ -155,6 +179,7 @@ func DeleteAllTrash(cfg *config.Config) error {
 	return nil
 }
 
+// RequestDeleteAllTrash deletes the entire trash
 func RequestDeleteAllTrash(cfg *config.Config) error {
 	req, err := http.NewRequest(http.MethodDelete, cfg.DriveAPIURL+"/storage/trash/all/request", nil)
 	if err != nil {
@@ -174,7 +199,8 @@ func RequestDeleteAllTrash(cfg *config.Config) error {
 	return nil
 }
 
-func DeleteSpecifiedTrashItems(cfg *config.Config, items []TrashItem) error {
+// DeleteSpecifiedTrashItems deletes items (either files or folders) identified by TrashRef from trash
+func DeleteSpecifiedTrashItems(cfg *config.Config, items []TrashRef) error {
 	body, _ := json.Marshal(TrashItemsRequest{Items: items})
 
 	req, err := http.NewRequest(http.MethodDelete, cfg.DriveAPIURL+"/storage/trash", bytes.NewReader(body))
@@ -190,15 +216,16 @@ func DeleteSpecifiedTrashItems(cfg *config.Config, items []TrashItem) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		respBody, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to delete specified trash items: %s - %s", resp.Status, string(respBody))
 	}
 	return nil
 }
 
-func DeleteTrashFile(cfg *config.Config, fileID int64) error {
-	url := fmt.Sprintf("%s/storage/trash/file/%d", cfg.DriveAPIURL, fileID)
+// DeleteTrashFile deletes a file from trash
+func DeleteTrashFile(cfg *config.Config, fileID string) error {
+	url := fmt.Sprintf("%s/storage/trash/file/%s", cfg.DriveAPIURL, fileID)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return err
@@ -217,6 +244,7 @@ func DeleteTrashFile(cfg *config.Config, fileID int64) error {
 	return nil
 }
 
+// DeleteTrashFolder deletes a folder from trash
 func DeleteTrashFolder(cfg *config.Config, folderID int64) error {
 	url := fmt.Sprintf("%s/storage/trash/folder/%d", cfg.DriveAPIURL, folderID)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
@@ -235,4 +263,22 @@ func DeleteTrashFolder(cfg *config.Config, folderID int64) error {
 		return fmt.Errorf("failed to delete trash folder: %s", resp.Status)
 	}
 	return nil
+}
+
+// FoldersToTrashRefs converts a slice of Folder to TrashRef
+func FoldersToTrashRefs(folders []folders.Folder) []TrashRef {
+	refs := make([]TrashRef, 0, len(folders))
+	for _, f := range folders {
+		refs = append(refs, NewTrashFolder(f.UUID))
+	}
+	return refs
+}
+
+// FilesToTrashRefs converts a slice of File to TrashRef
+func FilesToTrashRefs(files []folders.File) []TrashRef {
+	refs := make([]TrashRef, 0, len(files))
+	for _, f := range files {
+		refs = append(refs, NewTrashFile(f.UUID))
+	}
+	return refs
 }
