@@ -75,7 +75,7 @@ Implementation is **WIP** and here's the current status.
 | GET    | `/drive/folders/{id}/metadata`                    | —                               | No          |
 | GET    | `/drive/folders/{uuid}/size`                      | —                               | No          |
 | PATCH  | `/drive/folders/{uuid}`                           | Moves folder to a new parent    | Yes         |
-| DELETE | `/drive/folders/{uuid}`                           | Delete Folder                   | No          |
+| DELETE | `/drive/folders/{uuid}`                           | Delete Folder                   | Yes         |
 | GET    | `/drive/folders/meta`                             | —                               | No          |
 
 ### Share
