@@ -39,8 +39,8 @@ Implementation is **WIP** and here's the current status.
 | POST   | `/drive/files`                     | Create File                           | No          |
 | GET    | `/drive/files`                     | —                                     | No          |
 | GET    | `/drive/files/count`               | —                                     | No          |
-| GET    | `/drive/files/{uuid}/meta`         | —                                     | No          |
-| PUT    | `/drive/files/{uuid}/meta`         | Update File data                      | No          |
+| GET    | `/drive/files/{uuid}/meta`         | —                                     | Yes          |
+| PUT    | `/drive/files/{uuid}/meta`         | Update File data                      | Yes          |
 | PUT    | `/drive/files/{uuid}`              | —                                     | No          |
 | PATCH  | `/drive/files/{uuid}`              | —                                     | No          |
 | DELETE | `/drive/files/{uuid}`              | Delete file from storage and database | Yes         |

@@ -1,6 +1,7 @@
 package files
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -63,4 +64,39 @@ func DeleteFile(cfg *config.Config, uuid string) error {
 	}
 
 	return nil
+}
+
+// UpdateFileMeta updates the metadata of a file with the given UUID.
+func UpdateFileMeta(cfg *config.Config, fileUUID string, updated *folders.File) (*folders.File, error) {
+	endpoint := cfg.DriveAPIURL + filesPath + "/" + fileUUID + "/meta"
+
+	body, err := json.Marshal(updated)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("UpdateFileMeta failed: %d %s", resp.StatusCode, string(respBody))
+	}
+
+	var updatedFile folders.File
+	if err := json.NewDecoder(resp.Body).Decode(&updatedFile); err != nil {
+		return nil, err
+	}
+
+	return &updatedFile, nil
 }
