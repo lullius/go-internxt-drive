@@ -100,6 +100,13 @@ type ListOptions struct {
 	Order  string
 }
 
+// TreeNode is a recursive structure representing a folder, its files, and its child folders.
+type TreeNode struct {
+	Folder
+	Files    []File     `json:"files"`
+	Children []TreeNode `json:"children"`
+}
+
 // CreateFolder calls {DriveAPIURL}/folders with authorization.
 // It auto‑fills CreationTime/ModificationTime if empty, checks status, and returns the newly created Folder.
 func CreateFolder(cfg *config.Config, reqBody CreateFolderRequest) (*Folder, error) {
@@ -427,4 +434,37 @@ func MoveFolder(cfg *config.Config, uuid, destUUID string) error {
 		return fmt.Errorf("MoveFolder failed: %d %s", resp.StatusCode, string(body))
 	}
 	return nil
+}
+
+// Tree retrieves a full recursive folder tree starting from the given UUID.
+func Tree(cfg *config.Config, uuid string) (*TreeNode, error) {
+	endpoint := fmt.Sprintf("%s%s/%s/tree", cfg.DriveAPIURL, foldersPath, uuid)
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("Tree: create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Tree: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Tree failed: %d %s", resp.StatusCode, string(body))
+	}
+
+	var response struct {
+		Tree TreeNode `json:"tree"`
+	}
+	dec := json.NewDecoder(resp.Body)
+	dec.UseNumber()
+	if err := dec.Decode(&response); err != nil {
+		return nil, fmt.Errorf("Tree: decode response: %w", err)
+	}
+
+	return &response.Tree, nil
 }
