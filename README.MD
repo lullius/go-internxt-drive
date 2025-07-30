@@ -73,7 +73,7 @@ Implementation is **WIP** and here's the current status.
 | POST   | `/drive/folders/content/{uuid}/files/existence`   | Checks files existence          | No          |
 | GET    | `/drive/folders/content/{uuid}`                   | Gets folder content             | No          |
 | GET    | `/drive/folders/{id}/folders`                     | —                               | No          |
-| GET    | `/drive/folders/{uuid}/meta`                      | —                               | No          |
+| GET    | `/drive/folders/{uuid}/meta`                      | Retrieves metadata for a folder by UUID                               | Yes          |
 | PUT    | `/drive/folders/{uuid}/meta`                      | Renames a folder                | Yes         |
 | GET    | `/drive/folders/{uuid}/ancestors`                 | Retrieves the ancestor folders of the given folder UUID                               | Yes          |
 | GET    | `/drive/folders/{uuid}/tree`                      | Retrieves a full recursive folder tree starting from the given UUID                               | Yes          | 
