@@ -559,3 +559,32 @@ func GetFolderMetadataByUUID(cfg *config.Config, uuid string) (*Folder, error) {
 
 	return &folder, nil
 }
+
+// GetMetadataByPath retrieves folder metadata using a full path string.
+func GetMetadataByPath(cfg *config.Config, path string) (*Folder, error) {
+	endpoint := fmt.Sprintf("%s%s/meta?path=%s", cfg.DriveAPIURL, foldersPath, url.QueryEscape(path))
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetMetadataByPath: create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetMetadataByPath: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("GetMetadataByPath failed: %d %s", resp.StatusCode, string(body))
+	}
+
+	var folder Folder
+	if err := json.NewDecoder(resp.Body).Decode(&folder); err != nil {
+		return nil, fmt.Errorf("GetMetadataByPath: decode response: %w", err)
+	}
+
+	return &folder, nil
+}
