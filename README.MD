@@ -4,7 +4,7 @@ A pure Go library allowing you to interact with the [internxt Drive API](https:/
 
 Currently supports:
 
-- Auth (all)
+- Auth **(all)**
   - Login (`docs/login.md`)
   - Logout
   - 2FA
@@ -21,8 +21,8 @@ Currently supports:
   - Move
   - List files
   - List directories
-- Fuzzy Search
-- Trash
+- Fuzzy Search **(all)**
+- Trash **(all)**
 
 ## Status
 
