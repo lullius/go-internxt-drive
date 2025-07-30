@@ -75,7 +75,7 @@ Implementation is **WIP** and here's the current status.
 | GET    | `/drive/folders/{id}/folders`                     | —                               | No          |
 | GET    | `/drive/folders/{uuid}/meta`                      | —                               | No          |
 | PUT    | `/drive/folders/{uuid}/meta`                      | Renames a folder                | Yes         |
-| GET    | `/drive/folders/{uuid}/ancestors`                 | —                               | No          |
+| GET    | `/drive/folders/{uuid}/ancestors`                 | Retrieves the ancestor folders of the given folder UUID                               | Yes          |
 | GET    | `/drive/folders/{uuid}/tree`                      | Retrieves a full recursive folder tree starting from the given UUID                               | Yes          | 
 | GET    | `/drive/folders/{id}/metadata`                    | —                               | No          |
 | GET    | `/drive/folders/{uuid}/size`                      | —                               | Yes         |

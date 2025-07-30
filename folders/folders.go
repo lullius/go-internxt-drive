@@ -468,3 +468,36 @@ func Tree(cfg *config.Config, uuid string) (*TreeNode, error) {
 
 	return &response.Tree, nil
 }
+
+// Ancestors retrieves the ancestor folders of the given folder UUID.
+func Ancestors(cfg *config.Config, uuid string) ([]Folder, error) {
+	endpoint := fmt.Sprintf("%s%s/%s/ancestors", cfg.DriveAPIURL, foldersPath, uuid)
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("Ancestors: create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Ancestors: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Ancestors: read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Ancestors failed: %d %s", resp.StatusCode, string(body))
+	}
+
+	var folders []Folder
+	if err := json.Unmarshal(body, &folders); err != nil {
+		return nil, fmt.Errorf("Ancestors: decode JSON: %w", err)
+	}
+
+	return folders, nil
+}
