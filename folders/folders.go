@@ -501,3 +501,32 @@ func Ancestors(cfg *config.Config, uuid string) ([]Folder, error) {
 
 	return folders, nil
 }
+
+// GetFolderMetadata retrieves metadata for a folder by numeric ID.
+func GetFolderMetadata(cfg *config.Config, id int64) (*Folder, error) {
+	endpoint := fmt.Sprintf("%s%s/%d/metadata", cfg.DriveAPIURL, foldersPath, id)
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetFolderMetadata: create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetFolderMetadata: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("GetFolderMetadata failed: %d %s", resp.StatusCode, string(body))
+	}
+
+	var folder Folder
+	if err := json.NewDecoder(resp.Body).Decode(&folder); err != nil {
+		return nil, fmt.Errorf("GetFolderMetadata: decode response: %w", err)
+	}
+
+	return &folder, nil
+}
