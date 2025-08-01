@@ -52,7 +52,7 @@ Implementation is **WIP** and here's the current status.
 | PUT    | `/drive/files/{uuid}`              | —                                     | No          |
 | PATCH  | `/drive/files/{uuid}`              | Move a file to a new dir UUID         | Yes          |
 | DELETE | `/drive/files/{uuid}`              | Delete file from storage and database | Yes         |
-| GET    | `/drive/files/recents`             | —                                     | No          |
+| GET    | `/drive/files/recents`             | Retrieves a list of recent files with the given limit                                     | Yes          |
 | GET    | `/drive/files/meta`                | —                                     | No          |
 | POST   | `/drive/files/thumbnail`           | Create Thumbnail                      | No          |
 | DELETE | `/drive/files/{bucketId}/{fileId}` | Delete file from storage by fileId    | No          |

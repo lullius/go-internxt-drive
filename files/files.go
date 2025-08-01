@@ -174,3 +174,35 @@ func RenameFile(cfg *config.Config, fileUUID, newPlainName, newType string) erro
 
 	return nil
 }
+
+// GetRecentFiles retrieves a list of recent files with the given limit.
+func GetRecentFiles(cfg *config.Config, limit int) ([]folders.File, error) {
+	endpoint := cfg.DriveAPIURL + filesPath + "/recents"
+
+	params := url.Values{}
+	params.Set("limit", fmt.Sprintf("%d", limit))
+	endpoint += "?" + params.Encode()
+
+	req, err := http.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("GetRecentFiles failed: %d %s", resp.StatusCode, string(body))
+	}
+
+	var files []folders.File
+	if err := json.NewDecoder(resp.Body).Decode(&files); err != nil {
+		return nil, err
+	}
+	return files, nil
+}
