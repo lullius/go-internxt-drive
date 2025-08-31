@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/StarHack/go-internxt-drive/internxtclient"
-	"github.com/davecgh/go-spew/spew"
 )
 
 func TestBucketsIntegration(t *testing.T) {
@@ -34,7 +33,6 @@ func createFile(t *testing.T, filename, destFolderUUID string) *internxtclient.C
 		t.Fatalf("createMetaResponse is nil")
 	}
 	if createMetaResponse.Bucket != c.UserData.AccessData.User.Bucket {
-		spew.Dump(createMetaResponse)
 		t.Fatalf("createMetaResponse.Bucket is not the same as user's bucket. User's bucket is %s, but got %s", createMetaResponse.Bucket, c.UserData.AccessData.User.Bucket)
 	}
 

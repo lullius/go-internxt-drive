@@ -71,7 +71,6 @@ func TestFoldersIntegration(t *testing.T) {
 			t.Fatalf("folder.Files is nil")
 		}
 		if len(folder.Files) != 0 {
-			//spew.Dump(folder)
 			t.Fatalf("folder.Files should be 0, but is %d", len(folder.Files))
 		}
 		if len(folder.Children) != 1 {
