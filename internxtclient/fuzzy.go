@@ -25,14 +25,14 @@ type SearchResponse struct {
 }
 
 // FuzzySearch performs a fuzzy search with a given term and offset.
-func (c *FuzzyService) FuzzySearch(term string, offset int) (*SearchResponse, error) {
+func (f *FuzzyService) FuzzySearch(term string, offset int) (*SearchResponse, error) {
 	encodedTerm := url.PathEscape(term)
 	endpoint := path.Join("fuzzy", encodedTerm)
 
 	var result SearchResponse
 
-	if resp, err := c.client.doRequestWithQuery(APITypeDrive, http.MethodGet, endpoint, map[string]string{"offset": strconv.Itoa(offset)}, nil, &result, nil); err != nil {
-		return nil, c.client.GetError(endpoint, resp, err)
+	if resp, err := f.client.doRequestWithQuery(APITypeDrive, http.MethodGet, endpoint, map[string]string{"offset": strconv.Itoa(offset)}, nil, &result, nil); err != nil {
+		return nil, f.client.GetError(endpoint, resp, err)
 	}
 
 	return &result, nil

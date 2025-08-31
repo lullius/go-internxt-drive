@@ -40,60 +40,60 @@ type AccessResponse struct {
 const authPath = "auth"
 
 // Login calls {DRIVE_API_URL}/auth/login with {"email":…}
-func (c *AuthService) Login(email string) (*LoginResponse, error) {
+func (a *AuthService) Login(email string) (*LoginResponse, error) {
 	endpoint := path.Join(authPath, "login")
 	payload := map[string]string{
 		"email": email,
 	}
 	var loginResponse LoginResponse
 
-	if resp, err := c.client.Post(APITypeDrive, endpoint, &payload, &loginResponse, nil); err != nil {
-		return nil, c.client.GetError(endpoint, resp, err)
+	if resp, err := a.client.Post(APITypeDrive, endpoint, &payload, &loginResponse, nil); err != nil {
+		return nil, a.client.GetError(endpoint, resp, err)
 	}
 
 	return &loginResponse, nil
 }
 
 // Logout calls {DRIVE_API_URL}/auth/logout. Returns error if failed.
-func (c *AuthService) Logout() error {
+func (a *AuthService) Logout() error {
 	endpoint := path.Join(authPath, "logout")
 
-	if resp, err := c.client.Get(APITypeDrive, endpoint, nil, nil); err != nil {
-		return c.client.GetError(endpoint, resp, err)
+	if resp, err := a.client.Get(APITypeDrive, endpoint, nil, nil); err != nil {
+		return a.client.GetError(endpoint, resp, err)
 	}
 
 	return nil
 }
 
 // AccessLogin calls {DRIVE_API_URL}/auth/login/access based on our previous LoginResponse
-func (c *AuthService) AccessLogin(loginResponse *LoginResponse, password string) (*AccessResponse, error) {
+func (a *AuthService) AccessLogin(loginResponse *LoginResponse, password string) (*AccessResponse, error) {
 	endpoint := path.Join(authPath, "login", "access")
-	encPwd, passwordHash, err := deriveEncryptedPasswordAndHash(password, loginResponse.SKey, c.client.Config.AppCryptoSecret)
+	encPwd, passwordHash, err := deriveEncryptedPasswordAndHash(password, loginResponse.SKey, a.client.Config.AppCryptoSecret)
 	if err != nil {
 		return nil, err
 	}
-	c.client.Config.EncryptedPassword = encPwd
-	c.client.Config.PasswordHash = passwordHash
+	a.client.Config.EncryptedPassword = encPwd
+	a.client.Config.PasswordHash = passwordHash
 
 	req := map[string]interface{}{
-		"email":    c.client.UserData.AccessData.User.Email,
+		"email":    a.client.UserData.AccessData.User.Email,
 		"password": encPwd,
 	}
 
 	// TODO
 	/*
-		if lr.TFA && c.client.UserData.LoginData.TFA != "" {
-			req["tfa"] = c.client.UserData.LoginData.TFA
+		if lr.TFA && a.client.UserData.LoginData.TFA != "" {
+			req["tfa"] = a.client.UserData.LoginData.TFA
 		}
 	*/
 
 	var accessResponse AccessResponse
 
-	if resp, err := c.client.Post(APITypeDrive, endpoint, &req, &accessResponse, nil); err != nil {
-		return nil, c.client.GetError(endpoint, resp, err)
+	if resp, err := a.client.Post(APITypeDrive, endpoint, &req, &accessResponse, nil); err != nil {
+		return nil, a.client.GetError(endpoint, resp, err)
 	}
 
-	c.client.UserData.AccessData = &accessResponse
+	a.client.UserData.AccessData = &accessResponse
 
 	// 1) SHA256 the raw pass string
 	sum := sha256.Sum256([]byte(accessResponse.User.UserID))
@@ -101,9 +101,9 @@ func (c *AuthService) AccessLogin(loginResponse *LoginResponse, password string)
 
 	// 2) build "user:hexPass" and Base64
 	creds := fmt.Sprintf("%s:%s", accessResponse.User.BridgeUser, hexPass)
-	c.client.UserData.BasicAuthHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(creds))
+	a.client.UserData.BasicAuthHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(creds))
 
-	c.client.UserData.AccessData.User.Mnemonic, err = decryptTextWithKey(accessResponse.User.Mnemonic, password)
+	a.client.UserData.AccessData.User.Mnemonic, err = decryptTextWithKey(accessResponse.User.Mnemonic, password)
 	if err != nil {
 		return nil, err
 	}
@@ -111,14 +111,14 @@ func (c *AuthService) AccessLogin(loginResponse *LoginResponse, password string)
 	return &accessResponse, nil
 }
 
-func (c *AuthService) AreCredentialsCorrect(hashedPassword string) (bool, error) {
+func (a *AuthService) AreCredentialsCorrect(hashedPassword string) (bool, error) {
 	endpoint := path.Join(authPath, "are-credentials-correct")
 	opts := map[string]string{
 		"hashedPassword": hashedPassword,
 	}
 
-	if resp, err := c.client.doRequestWithQuery(APITypeDrive, http.MethodGet, endpoint, opts, nil, nil, nil); err != nil {
-		return false, c.client.GetError(endpoint, resp, err)
+	if resp, err := a.client.doRequestWithQuery(APITypeDrive, http.MethodGet, endpoint, opts, nil, nil, nil); err != nil {
+		return false, a.client.GetError(endpoint, resp, err)
 	}
 
 	return true, nil
