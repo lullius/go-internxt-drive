@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/StarHack/go-internxt-drive/config"
-	"github.com/StarHack/go-internxt-drive/files"
 )
 
 func UploadFile(cfg *config.Config, filePath, targetFolderUUID string, modTime time.Time) (*CreateMetaResponse, error) {
@@ -128,17 +127,5 @@ func UploadFileStream(cfg *config.Config, targetFolderUUID, fileName string, in 
 	if err != nil {
 		return nil, err
 	}
-
-	file, err := files.GetFileMeta(cfg, meta.UUID)
-	if err != nil {
-		return nil, err
-	}
-	file.ModificationTime = modTime
-	file.UpdatedAt = modTime
-	_, err = files.UpdateFileMeta(cfg, meta.UUID, file)
-	if err != nil {
-		return nil, err
-	}
-
 	return meta, nil
 }

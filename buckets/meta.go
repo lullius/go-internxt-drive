@@ -49,6 +49,8 @@ func CreateMetaFile(cfg *config.Config, name, bucketID, fileID, encryptVersion, 
 		Size:             size,
 		PlainName:        plainName,
 		Type:             fileType,
+		CreationTime:     modTime,
+		Date:             modTime,
 		ModificationTime: modTime,
 	}
 	b, err := json.Marshal(reqBody)
