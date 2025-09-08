@@ -22,7 +22,7 @@ type CreateMetaRequest struct {
 	Type             string    `json:"type"`
 	CreationTime     time.Time `json:"creationTime"`
 	Date             time.Time `json:"date"`
-	ModificationTime time.Time `json:"modificationTime"`
+	ModificationTime string    `json:"modificationTime"`
 }
 
 type CreateMetaResponse struct {
@@ -49,7 +49,7 @@ func CreateMetaFile(cfg *config.Config, name, bucketID, fileID, encryptVersion, 
 		Size:             size,
 		PlainName:        plainName,
 		Type:             fileType,
-		ModificationTime: modTime,
+		ModificationTime: modTime.UTC().Format("2006-01-02T15:04:05.000Z"),
 	}
 	b, err := json.Marshal(reqBody)
 	if err != nil {
